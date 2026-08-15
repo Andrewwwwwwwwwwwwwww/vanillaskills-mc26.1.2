@@ -97,6 +97,18 @@ public class VanillaSkills implements ModInitializer {
                     @Override
                     public void onResourceManagerReload(ResourceManager manager) {
                         io.github.andrewwwwwwwwwwwwwww.vanillaskills.data.VsContent.reload(manager);
+
+                        // Rebuild the tree so a pack edit takes effect on /reload rather than only on
+                        // restart. Guarded on `server`: this listener also runs during the FIRST datapack
+                        // load, while the server is still being constructed — at that point SERVER_STARTED
+                        // has not run, worldDir() is null, and TREE.load() would have nothing to migrate
+                        // into. SERVER_STARTED does the initial build instead.
+                        if (server != null) {
+                            TREE.load();
+                            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                                PLAYERS.applyAll(player);
+                            }
+                        }
                     }
                 });
 
@@ -174,6 +186,14 @@ public class VanillaSkills implements ModInitializer {
             for (ServerLevel lvl : srv.getAllLevels()) {
                 io.github.andrewwwwwwwwwwwwwww.vanillaskills.crate.CrateReel.sweep(lvl);
             }
+            // Redraw every tracked Skill Shard block. Their overlays are entities written into the world,
+            // so one built by an older version keeps whatever size and model it was spawned with — 2.0.0
+            // moved the anti-z-fighting oversize off the model and onto the entity, and an un-redrawn
+            // overlay flickers against the vanilla block underneath. Doubles as the repair for overlays
+            // lost to a chunk-delete or an entity wipe. Only touches loaded chunks; the rest catch up as
+            // they load.
+            int redrawn = SHARDS.refreshAll(srv);
+            if (redrawn > 0) LOGGER.info("Redrew {} Skill Shard block overlay(s)", redrawn);
         });
 
         ServerLifecycleEvents.SERVER_STOPPING.register(srv -> {
@@ -226,9 +246,8 @@ public class VanillaSkills implements ModInitializer {
             if (!stable && !unstable) return net.minecraft.world.InteractionResult.PASS;
 
             // Merge: a Stable block clicked onto an already-placed Stable block widens its aura instead
-            // of placing a second one.
-            // Sneaking opts out of merging and places normally -- the same convention vanilla uses to
-            // bypass a block's use action, and the only way to build two Stable blocks side by side.
+            // of placing a second one. Sneaking opts out and places normally — the same convention vanilla
+            // uses to bypass a block's use action, and the only way to build two Stable blocks side by side.
             if (stable && !sp.isSecondaryUseActive() && SHARDS.kindAt(level, hit.getBlockPos())
                     == io.github.andrewwwwwwwwwwwwwww.vanillaskills.shard.ShardBlocks.Kind.STABLE) {
                 if (SHARDS.merge(level, hit.getBlockPos())) {
