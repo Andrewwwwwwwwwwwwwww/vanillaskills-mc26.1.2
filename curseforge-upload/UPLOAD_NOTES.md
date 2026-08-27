@@ -1,11 +1,11 @@
-# VanillaSkills — Fabric, MC 26.1.2 — CurseForge Upload (2.1.7)
+# VanillaSkills — Fabric, MC 26.1.2 — CurseForge Upload (2.1.8)
 
 Full details, including the breaking-release notice and the changelog to paste, are in
 `../../../26.2/vanillaskills/curseforge-upload/UPLOAD_NOTES.md`. Upload as an ADDITIONAL FILE on the
 existing **Vanilla-Skills** project (`1570558`) — same project as every other edition, different
 game-version tag.
 
-**File:** `vanillaskills-2.1.7+mc26.1.2.jar`
+**File:** `vanillaskills-2.1.8+mc26.1.2.jar`
 - Game version **26.1.2**, loader **Fabric**
 - Required dependency: **Fabric API** (projectID `306612`)
 - Release type: Release
